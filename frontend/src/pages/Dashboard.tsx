@@ -29,6 +29,8 @@ import type { Car, Contact } from '../types';
 import { createCar, updateCar, deleteCar, getCars } from '../services/cars';
 import { getContacts, deleteContact } from '../services/contacts';
 import { formatPrice } from '../utils/format';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
 export default function Dashboard() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -50,6 +52,9 @@ export default function Dashboard() {
     transmission: '',
     images: [],
   });
+
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     loadData();
@@ -178,11 +183,9 @@ export default function Dashboard() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-
-
+    <Box sx={{ p: { xs: 1, sm: 3 } }}>
       <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <Typography variant="h4">Dashboard</Typography>
           <Button
             variant="contained"
@@ -203,12 +206,12 @@ export default function Dashboard() {
               });
               setOpenDialog(true);
             }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Adicionar Carro
           </Button>
         </Box>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 3, mb: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3, mb: 4 }}>
           {cars.map((car) => (
             <Card key={car.id}>
               {car.imageUrls && car.imageUrls.length > 0 && (
@@ -274,7 +277,7 @@ export default function Dashboard() {
           ))}
         </Box>
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth fullScreen={fullScreen}>
           <DialogTitle>
             {editingCar ? 'Editar Carro' : 'Adicionar Carro'}
           </DialogTitle>
