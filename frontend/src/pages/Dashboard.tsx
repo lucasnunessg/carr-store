@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const [carForm, setCarForm] = useState<Partial<Car>>({
+  const [carForm, setCarForm] = useState<Partial<Car> & { images?: File[] }>({
     brand: '',
     model: '',
     year: new Date().getFullYear(),
@@ -48,6 +48,7 @@ export default function Dashboard() {
     color: '',
     fuelType: '',
     transmission: '',
+    images: [],
   });
 
   useEffect(() => {
@@ -71,23 +72,20 @@ export default function Dashboard() {
     try {
       const formData = new FormData();
       Object.entries(carForm).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          if (key === 'images' && Array.isArray(value)) {
-            value.forEach((file) => {
-              formData.append('images', file);
-            });
-          } else {
-            formData.append(key, value.toString());
-          }
+        if (value !== null && value !== undefined && key !== 'images') {
+          formData.append(key, value.toString());
         }
       });
-
+      if (carForm.images && carForm.images.length > 0) {
+        carForm.images.forEach((file) => {
+          formData.append('images', file);
+        });
+      }
       if (editingCar) {
         await updateCar(editingCar.id, formData);
       } else {
         await createCar(formData);
       }
-
       setOpenDialog(false);
       setCarForm({
         brand: '',
@@ -99,6 +97,7 @@ export default function Dashboard() {
         color: '',
         fuelType: '',
         transmission: '',
+        images: [],
       });
       setEditingCar(null);
       loadData();
@@ -130,6 +129,7 @@ export default function Dashboard() {
       fuelType: car.fuelType,
       transmission: car.transmission,
       description: car.description,
+      images: [],
     });
     setOpenDialog(true);
   };
@@ -163,7 +163,7 @@ export default function Dashboard() {
     if (files && files.length > 0) {
       setCarForm(prev => ({
         ...prev,
-        imageUrls: Array.from(files).map(file => URL.createObjectURL(file))
+        images: Array.from(files)
       }));
     }
   };
@@ -199,6 +199,7 @@ export default function Dashboard() {
                 fuelType: '',
                 transmission: '',
                 description: '',
+                images: [],
               });
               setOpenDialog(true);
             }}
