@@ -1,7 +1,5 @@
 import type { User } from '../types';
 
-const API_URL = 'http://localhost:3000';
-
 const ADMIN_EMAIL = 'umdouglassimoes@gmail.com';
 const ADMIN_PASSWORD = 'dodo1252501';
 
