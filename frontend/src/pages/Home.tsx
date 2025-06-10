@@ -20,8 +20,6 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { formatPrice } from '../utils/format';
-import { isAuthenticated } from "../services/auth";
-import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -34,7 +32,6 @@ export default function Home() {
     phone: '',
     message: '',
   });
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadCars();
@@ -95,40 +92,82 @@ export default function Home() {
   };
 
   return (
-    <Box>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: '1fr 1fr',
-                md: '1fr 1fr 1fr',
-              },
-              gap: 2,
-            }}
-          >
-            <TextField
-              label="Marca"
-              value={filters.brand || ''}
-              onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
-              fullWidth
-            />
-            <TextField
-              label="Modelo"
-              value={filters.model || ''}
-              onChange={(e) => setFilters({ ...filters, model: e.target.value })}
-              fullWidth
-            />
-            <TextField
-              label="Ano Mínimo"
-              type="number"
-              value={filters.minYear || ''}
-              onChange={(e) => setFilters({ ...filters, minYear: Number(e.target.value) })}
-              fullWidth
-            />
-          </Box>
+    <Box sx={{ py: 4 }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: 6, textAlign: 'center' }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Encontre o Carro dos Seus Sonhos
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Explore nossa seleção de veículos de alta qualidade
+          </Typography>
+        </Box>
+
+        <Box sx={{ mb: 6 }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Buscar Carros
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: '1fr 1fr',
+                  md: '1fr 1fr 1fr 1fr',
+                },
+                gap: 2,
+              }}
+            >
+              <TextField
+                label="Marca"
+                value={filters.brand || ''}
+                onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Modelo"
+                value={filters.model || ''}
+                onChange={(e) => setFilters({ ...filters, model: e.target.value })}
+                fullWidth
+              />
+              <TextField
+                label="Preço Mínimo"
+                type="number"
+                value={filters.minPrice || ''}
+                onChange={(e) => setFilters({ ...filters, minPrice: Number(e.target.value) })}
+                fullWidth
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                }}
+              />
+              <TextField
+                label="Preço Máximo"
+                type="number"
+                value={filters.maxPrice || ''}
+                onChange={(e) => setFilters({ ...filters, maxPrice: Number(e.target.value) })}
+                fullWidth
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                }}
+              />
+            </Box>
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                onClick={() => loadCars()}
+                sx={{ mr: 1 }}
+              >
+                Buscar
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setFilters({})}
+              >
+                Limpar
+              </Button>
+            </Box>
+          </Paper>
         </Box>
 
         {cars.length > 0 ? (
@@ -192,17 +231,12 @@ export default function Home() {
                   </Typography>
                   <Button
                     variant="contained"
-                    href="https://api.whatsapp.com/send/?phone=55999997947&text&type=phone_number&app_absent=0"
+                    color="primary"
+                    href={`https://wa.me/55999997647?text=Olá, tenho interesse no ${car.brand} ${car.model}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    startIcon={<WhatsAppIcon sx={{ color: '#25D366' }} />}
+                    startIcon={<WhatsAppIcon />}
                     fullWidth
-                    sx={{ 
-                      bgcolor: '#25D366',
-                      '&:hover': {
-                        bgcolor: '#128C7E'
-                      }
-                    }}
                   >
                     Contato
                   </Button>
@@ -218,7 +252,7 @@ export default function Home() {
           </Box>
         )}
 
-        <Paper sx={{ p: 3, bgcolor: 'background.paper' }}>
+        <Paper sx={{ p: 3 }}>
           <Typography variant="h6" gutterBottom>
             Não Encontrou o Carro Ideal?
           </Typography>

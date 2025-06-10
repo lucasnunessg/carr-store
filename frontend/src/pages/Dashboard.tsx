@@ -21,17 +21,14 @@ import {
   TableRow,
   Paper,
   InputAdornment,
-  TablePagination,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Logout as LogoutIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import type { Car, Contact } from '../types';
 import { createCar, updateCar, deleteCar, getCars } from '../services/cars';
 import { getContacts, deleteContact } from '../services/contacts';
 import { formatPrice } from '../utils/format';
-import { logout } from "../services/auth";
-import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [cars, setCars] = useState<Car[]>([]);
@@ -41,7 +38,7 @@ export default function Dashboard() {
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
-  const [carForm, setCarForm] = useState<Partial<Car> & { images?: File[] }>({
+  const [carForm, setCarForm] = useState<Partial<Car>>({
     brand: '',
     model: '',
     year: new Date().getFullYear(),
@@ -51,9 +48,7 @@ export default function Dashboard() {
     color: '',
     fuelType: '',
     transmission: '',
-    images: [],
   });
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
@@ -76,20 +71,23 @@ export default function Dashboard() {
     try {
       const formData = new FormData();
       Object.entries(carForm).forEach(([key, value]) => {
-        if (value !== null && value !== undefined && key !== 'images') {
-          formData.append(key, value.toString());
+        if (value !== null && value !== undefined) {
+          if (key === 'images' && Array.isArray(value)) {
+            value.forEach((file) => {
+              formData.append('images', file);
+            });
+          } else {
+            formData.append(key, value.toString());
+          }
         }
       });
-      if (carForm.images && carForm.images.length > 0) {
-        carForm.images.forEach((file) => {
-          formData.append('images', file);
-        });
-      }
+
       if (editingCar) {
         await updateCar(editingCar.id, formData);
       } else {
         await createCar(formData);
       }
+
       setOpenDialog(false);
       setCarForm({
         brand: '',
@@ -101,7 +99,6 @@ export default function Dashboard() {
         color: '',
         fuelType: '',
         transmission: '',
-        images: [],
       });
       setEditingCar(null);
       loadData();
@@ -121,15 +118,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteContact = async (id: number) => {
-    try {
-      await deleteContact(id);
-      loadData();
-    } catch (error) {
-      console.error('Error deleting contact:', error);
-    }
-  };
-
   const handleEditCar = (car: Car) => {
     setEditingCar(car);
     setCarForm({
@@ -142,7 +130,6 @@ export default function Dashboard() {
       fuelType: car.fuelType,
       transmission: car.transmission,
       description: car.description,
-      images: [],
     });
     setOpenDialog(true);
   };
@@ -176,13 +163,24 @@ export default function Dashboard() {
     if (files && files.length > 0) {
       setCarForm(prev => ({
         ...prev,
-        images: Array.from(files)
+        imageUrls: Array.from(files).map(file => URL.createObjectURL(file))
       }));
+    }
+  };
+
+  const handleDeleteContact = async (id: number) => {
+    try {
+      await deleteContact(id);
+      loadData();
+    } catch (error) {
+      console.error('Error deleting contact:', error);
     }
   };
 
   return (
     <Box sx={{ p: 3 }}>
+
+
       <Container maxWidth="lg">
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">Dashboard</Typography>
@@ -201,7 +199,6 @@ export default function Dashboard() {
                 fuelType: '',
                 transmission: '',
                 description: '',
-                images: [],
               });
               setOpenDialog(true);
             }}
@@ -479,6 +476,7 @@ export default function Dashboard() {
                   <TableCell>Telefone</TableCell>
                   <TableCell>Mensagem</TableCell>
                   <TableCell>Data</TableCell>
+                  <TableCell>Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -487,8 +485,11 @@ export default function Dashboard() {
                     <TableCell>{contact.name}</TableCell>
                     <TableCell>{contact.phone}</TableCell>
                     <TableCell>{contact.message}</TableCell>
+                    <TableCell>{new Date(contact.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      {new Date(contact.createdAt).toLocaleDateString()}
+                      <IconButton size="small" color="error" onClick={() => handleDeleteContact(contact.id)}>
+                        <DeleteIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
