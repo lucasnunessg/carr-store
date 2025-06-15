@@ -7,7 +7,6 @@ import {
   Button,
   Container,
 } from '@mui/material';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { isAuthenticated, logout } from '../services/auth';
 
 export default function Layout() {
@@ -15,9 +14,17 @@ export default function Layout() {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static" color="default" elevation={1}>
         <Toolbar>
-          <DirectionsCarIcon sx={{ mr: 2, color: 'primary.main' }} />
+          <Box
+            component="img"
+            src="/broker-name.png.png"
+            alt="Broker Store Logo"
+            sx={{
+              height: 40,
+              mr: 2,
+            }}
+          />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'primary.main', fontWeight: 600 }}>
-            Car Store
+            Broker Store
           </Typography>
           <Button
             component={RouterLink}
@@ -73,7 +80,7 @@ export default function Layout() {
       >
         <Container maxWidth="sm">
           <Typography variant="body2" color="text.secondary" align="center">
-            © {new Date().getFullYear()} Car Store. All rights reserved.
+            © {new Date().getFullYear()} Broker Store. All rights reserved.
           </Typography>
         </Container>
       </Box>

@@ -10,23 +10,24 @@ import { isAuthenticated } from './services/auth';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#3B82F6', // Modern Blue
-      light: '#60A5FA',
-      dark: '#2563EB',
+      main: '#1a1f36', // Dark blue
+      light: '#3c3c3c', // Dark gray
+      dark: '#1a1f36',
     },
     secondary: {
-      main: '#6366F1', // Indigo
-      light: '#818CF8',
-      dark: '#4F46E5',
+      main: '#c9a84e', // Gold
+      light: '#c9a84e',
+      dark: '#c9a84e',
     },
     background: {
-      default: '#F8FAFC', // Cool Gray
-      paper: '#FFFFFF',
+      default: '#f5f5f5', // Light gray
+      paper: '#ffffff',
     },
     text: {
-      primary: '#1E293B', // Slate
-      secondary: '#64748B',
+      primary: '#1a1f36', // Dark blue
+      secondary: '#3c3c3c', // Dark gray
     },
+
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',

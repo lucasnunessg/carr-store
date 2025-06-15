@@ -211,7 +211,23 @@ export default function Dashboard() {
             Adicionar Carro
           </Button>
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3, mb: 4 }}>
+
+        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+          Carros Cadastrados
+        </Typography>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: '1fr 1fr',
+              md: '1fr 1fr 1fr',
+            },
+            gap: 3,
+            mb: 6,
+          }}
+        >
           {cars.map((car) => (
             <Card key={car.id}>
               {car.imageUrls && car.imageUrls.length > 0 && (
@@ -275,6 +291,41 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           ))}
+        </Box>
+
+        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+          Contatos
+        </Typography>
+
+        <Box sx={{ mt: 4 }}>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Nome</TableCell>
+                  <TableCell>Telefone</TableCell>
+                  <TableCell>Mensagem</TableCell>
+                  <TableCell>Data</TableCell>
+                  <TableCell>Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {contacts.map((contact) => (
+                  <TableRow key={contact.id}>
+                    <TableCell>{contact.name}</TableCell>
+                    <TableCell>{contact.phone}</TableCell>
+                    <TableCell>{contact.message}</TableCell>
+                    <TableCell>{new Date(contact.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <IconButton size="small" color="error" onClick={() => handleDeleteContact(contact.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Box>
 
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth fullScreen={fullScreen}>
@@ -467,40 +518,6 @@ export default function Dashboard() {
             )}
           </DialogContent>
         </Dialog>
-
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Contatos
-          </Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>Telefone</TableCell>
-                  <TableCell>Mensagem</TableCell>
-                  <TableCell>Data</TableCell>
-                  <TableCell>Ações</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {contacts.map((contact) => (
-                  <TableRow key={contact.id}>
-                    <TableCell>{contact.name}</TableCell>
-                    <TableCell>{contact.phone}</TableCell>
-                    <TableCell>{contact.message}</TableCell>
-                    <TableCell>{new Date(contact.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <IconButton size="small" color="error" onClick={() => handleDeleteContact(contact.id)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
       </Container>
     </Box>
   );
