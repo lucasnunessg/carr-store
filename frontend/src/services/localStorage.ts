@@ -1,12 +1,15 @@
-import type { Car, Contact } from '../types';
+import type { Car, Contact as ContactBase } from '../types';
 
-const CARS_KEY = 'broker-store-cars';
-const CONTACTS_KEY = 'broker-store-contacts';
+const CARS_KEY = 'cars';
+const CONTACTS_KEY = 'contacts';
 
-// Função auxiliar para gerar IDs únicos
+type Contact = ContactBase & {
+  updatedAt?: string;
+};
+
 const generateId = () => Date.now().toString();
+console.log(generateId());
 
-// Função para converter File para base64
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -16,112 +19,93 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Função para converter base64 para URL
-const base64ToUrl = (base64: string): string => {
-  return base64;
+console.log(fileToBase64(new File([], 'test.jpg')));
+
+export const getCars = async (): Promise<Car[]> => {
+  const cars = JSON.parse(localStorage.getItem(CARS_KEY) || '[]');
+  return cars;
 };
 
-export const getCars = async (filters?: any): Promise<Car[]> => {
-  const cars = JSON.parse(localStorage.getItem(CARS_KEY) || '[]');
-  
-  if (!filters) return cars;
-
-  return cars.filter((car: Car) => {
-    if (filters.brand && !car.brand.toLowerCase().includes(filters.brand.toLowerCase())) return false;
-    if (filters.model && !car.model.toLowerCase().includes(filters.model.toLowerCase())) return false;
-    if (filters.minPrice && car.price < filters.minPrice) return false;
-    if (filters.maxPrice && car.price > filters.maxPrice) return false;
-    return true;
-  });
+export const getCarById = async (id: number): Promise<Car | null> => {
+  const cars = await getCars();
+  return cars.find(car => car.id === id) || null;
 };
 
-export const createCar = async (formData: FormData): Promise<Car> => {
-  const cars = JSON.parse(localStorage.getItem(CARS_KEY) || '[]');
-  
-  const imageFiles = formData.getAll('images') as File[];
-  const imagePromises = imageFiles.map(fileToBase64);
-  const imageUrls = await Promise.all(imagePromises);
-
+export const createCar = async (car: Omit<Car, 'id'>): Promise<Car> => {
+  const cars = await getCars();
   const newCar: Car = {
-    id: parseInt(generateId()),
-    brand: formData.get('brand') as string,
-    model: formData.get('model') as string,
-    year: parseInt(formData.get('year') as string),
-    price: parseFloat(formData.get('price') as string),
-    mileage: parseInt(formData.get('mileage') as string),
-    color: formData.get('color') as string,
-    fuelType: formData.get('fuelType') as string,
-    transmission: formData.get('transmission') as string,
-    description: formData.get('description') as string,
-    imageUrls: imageUrls,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    ...car,
+    id: Date.now(),
   };
-
   cars.push(newCar);
   localStorage.setItem(CARS_KEY, JSON.stringify(cars));
   return newCar;
 };
 
-export const updateCar = async (id: number, formData: FormData): Promise<Car> => {
-  const cars = JSON.parse(localStorage.getItem(CARS_KEY) || '[]');
-  const index = cars.findIndex((car: Car) => car.id === id);
-  
-  if (index === -1) throw new Error('Car not found');
-
-  const imageFiles = formData.getAll('images') as File[];
-  const imagePromises = imageFiles.map(fileToBase64);
-  const imageUrls = await Promise.all(imagePromises);
+export const updateCar = async (id: number, car: Partial<Car>): Promise<Car | null> => {
+  const cars = await getCars();
+  const index = cars.findIndex(c => c.id === id);
+  if (index === -1) return null;
 
   const updatedCar: Car = {
     ...cars[index],
-    brand: formData.get('brand') as string,
-    model: formData.get('model') as string,
-    year: parseInt(formData.get('year') as string),
-    price: parseFloat(formData.get('price') as string),
-    mileage: parseInt(formData.get('mileage') as string),
-    color: formData.get('color') as string,
-    fuelType: formData.get('fuelType') as string,
-    transmission: formData.get('transmission') as string,
-    description: formData.get('description') as string,
-    imageUrls: imageUrls.length > 0 ? imageUrls : cars[index].imageUrls,
-    updatedAt: new Date().toISOString(),
+    ...car,
   };
-
   cars[index] = updatedCar;
   localStorage.setItem(CARS_KEY, JSON.stringify(cars));
   return updatedCar;
 };
 
-export const deleteCar = async (id: number): Promise<void> => {
-  const cars = JSON.parse(localStorage.getItem(CARS_KEY) || '[]');
-  const filteredCars = cars.filter((car: Car) => car.id !== id);
+export const deleteCar = async (id: number): Promise<boolean> => {
+  const cars = await getCars();
+  const filteredCars = cars.filter(car => car.id !== id);
+  if (filteredCars.length === cars.length) return false;
+  
   localStorage.setItem(CARS_KEY, JSON.stringify(filteredCars));
+  return true;
 };
 
-export const getContacts = async (): Promise<Contact[]> => {
+export const getContacts = (): Contact[] => {
   return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]');
 };
 
-export const createContact = async (contact: Partial<Contact>): Promise<Contact> => {
-  const contacts = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]');
-  
+export const createContact = async (contact: Omit<Contact, 'id' | 'createdAt'>): Promise<Contact> => {
+  const contacts = getContacts();
   const newContact: Contact = {
-    id: parseInt(generateId()),
-    name: contact.name || '',
-    phone: contact.phone || '',
-    message: contact.message || '',
+    ...contact,
+    id: Date.now(),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
-
   contacts.push(newContact);
   localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
   return newContact;
 };
 
-export const deleteContact = async (id: number): Promise<void> => {
-  const contacts = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]');
-  const filteredContacts = contacts.filter((contact: Contact) => contact.id !== id);
+export const getContactById = async (id: number): Promise<Contact | null> => {
+  const contacts = getContacts();
+  return contacts.find(contact => contact.id === id) || null;
+};
+
+export const updateContact = async (id: number, contact: Partial<Contact>): Promise<Contact | null> => {
+  const contacts = getContacts();
+  const index = contacts.findIndex(c => c.id === id);
+  if (index === -1) return null;
+
+  const updatedContact: Contact = {
+    ...contacts[index],
+    ...contact,
+    updatedAt: new Date().toISOString(),
+  };
+  contacts[index] = updatedContact;
+  localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
+  return updatedContact;
+};
+
+export const deleteContact = async (id: number): Promise<boolean> => {
+  const contacts = getContacts();
+  const filteredContacts = contacts.filter(contact => contact.id !== id);
+  if (filteredContacts.length === contacts.length) return false;
+  
   localStorage.setItem(CONTACTS_KEY, JSON.stringify(filteredContacts));
-}; 
+  return true;
+};

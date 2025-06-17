@@ -4,15 +4,14 @@ export interface Car {
   model: string;
   year: number;
   price: number;
+  description: string;
+  imageUrls: string[];
   mileage: number;
   color: string;
   fuelType: string;
   transmission: string;
-  description: string;
-  imageUrls: string[];
-  images?: File[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Contact {
@@ -20,8 +19,7 @@ export interface Contact {
   name: string;
   phone: string;
   message: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
 }
 
 export interface CarFilters {
@@ -29,5 +27,4 @@ export interface CarFilters {
   model?: string;
   minPrice?: number;
   maxPrice?: number;
-  year?: number;
 } 
