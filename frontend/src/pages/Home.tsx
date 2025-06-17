@@ -42,7 +42,7 @@ export default function Home() {
 
   const loadCars = async () => {
     try {
-      const data = await getCars(filters);
+      const data = await getCars();
       setCars(data);
     } catch (error) {
       console.error('Error loading cars:', error);
