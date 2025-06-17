@@ -1,18 +1,17 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
-  Typography,
   Button,
   Card,
   CardContent,
   CardMedia,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
+  DialogContent,
+  DialogTitle,
   IconButton,
+  TextField,
+  Typography,
   Table,
   TableBody,
   TableCell,
@@ -20,19 +19,33 @@ import {
   TableHead,
   TableRow,
   Paper,
+  CircularProgress,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { getCars, createCar, updateCar, deleteCar, getContacts, deleteContact } from '../services/localStorage';
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import { getCars, createCar, updateCar, deleteCar } from '../services/carService';
+import { getContacts, deleteContact } from '../services/contactService';
 import type { Car, Contact } from '../types';
-import { fileToBase64 } from '../utils/fileUtils';
 
-export default function Dashboard() {
+const Dashboard: React.FC = () => {
+  const theme = useTheme();
   const [cars, setCars] = useState<Car[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [formData, setFormData] = useState<Partial<Car>>({
+    brand: '',
+    model: '',
+    year: new Date().getFullYear(),
+    price: 0,
+    description: '',
+    mileage: 0,
+    fuelType: '',
+    transmission: '',
+    color: '',
+  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     loadData();
@@ -40,60 +53,93 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
+      setLoading(true);
       const [carsData, contactsData] = await Promise.all([
         getCars(),
-        getContacts(),
+        getContacts()
       ]);
       setCars(carsData);
       setContacts(contactsData);
     } catch (error) {
       console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const carData: Omit<Car, 'id'> = {
-      brand: formData.get('brand') as string,
-      model: formData.get('model') as string,
-      year: parseInt(formData.get('year') as string),
-      price: parseFloat(formData.get('price') as string),
-      mileage: parseInt(formData.get('mileage') as string),
-      color: formData.get('color') as string,
-      fuelType: formData.get('fuelType') as string,
-      transmission: formData.get('transmission') as string,
-      description: formData.get('description') as string,
-      imageUrls: [], // Será preenchido após o upload das imagens
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const handleOpen = (car?: Car) => {
+    if (car) {
+      setEditingCar(car);
+      setFormData(car);
+    } else {
+      setEditingCar(null);
+      setFormData({
+        brand: '',
+        model: '',
+        year: new Date().getFullYear(),
+        price: 0,
+        description: '',
+        mileage: 0,
+        fuelType: '',
+        transmission: '',
+        color: '',
+      });
+    }
+    setOpen(true);
+  };
 
+  const handleClose = () => {
+    setOpen(false);
+    setEditingCar(null);
+    setFormData({
+      brand: '',
+      model: '',
+      year: new Date().getFullYear(),
+      price: 0,
+      description: '',
+      mileage: 0,
+      fuelType: '',
+      transmission: '',
+      color: '',
+    });
+    setImageFile(null);
+  };
+
+  const handleSubmit = async () => {
     try {
-      const imageFiles = formData.getAll('images') as File[];
-      const imagePromises = imageFiles.map(fileToBase64);
-      const imageUrls = await Promise.all(imagePromises);
-      carData.imageUrls = imageUrls as string[];
-
-      if (editingCar) {
-        await updateCar(editingCar.id, carData);
-      } else {
-        await createCar(carData);
+      const requiredFields = [
+        'brand', 'model', 'year', 'price', 'description', 'mileage', 'fuelType', 'transmission', 'color'
+      ];
+      for (const field of requiredFields) {
+        if (!formData[field as keyof Car]) {
+          alert(`Campo obrigatório: ${field}`);
+          return;
+        }
       }
-      setOpenDialog(false);
+      const carData = {
+        brand: formData.brand as string,
+        model: formData.model as string,
+        year: formData.year as number,
+        price: formData.price as number,
+        description: formData.description as string,
+        mileage: formData.mileage as number,
+        fuelType: formData.fuelType as string,
+        transmission: formData.transmission as string,
+        color: formData.color as string,
+      };
+      if (editingCar) {
+        await updateCar(editingCar.id.toString(), carData, imageFile ?? undefined);
+      } else {
+        await createCar(carData, imageFile ?? undefined);
+      }
+      handleClose();
       loadData();
     } catch (error) {
       console.error('Error saving car:', error);
     }
   };
 
-  const handleEdit = (car: Car) => {
-    setEditingCar(car);
-    setOpenDialog(true);
-  };
-
-  const handleDeleteCar = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este carro?')) {
       try {
         await deleteCar(id);
@@ -104,7 +150,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteContact = async (id: number) => {
+  const handleDeleteContact = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este contato?')) {
       try {
         await deleteContact(id);
@@ -115,188 +161,189 @@ export default function Dashboard() {
     }
   };
 
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ py: 4 }}>
-      <Container maxWidth="lg">
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4" component="h1">
-            Dashboard
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setEditingCar(null);
-              setOpenDialog(true);
-            }}
-          >
-            Adicionar Carro
-          </Button>
-        </Box>
-
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-          Carros Cadastrados
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
+        <Typography variant="h4" component="h1">
+          Dashboard
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleOpen()}
+          sx={{
+            background: theme.palette.primary.main,
+            '&:hover': {
+              background: theme.palette.primary.dark,
+            },
+          }}
+        >
+          Adicionar Carro
+        </Button>
+      </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3, mb: 6 }}>
-          {cars.map((car) => (
-            <Card key={car.id}>
-              {car.imageUrls && car.imageUrls.length > 0 && (
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={car.imageUrls[0]}
-                  alt={`${car.brand} ${car.model}`}
-                />
-              )}
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {car.brand} {car.model}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Ano: {car.year} | Quilometragem: {car.mileage}km
-                </Typography>
-                <Typography variant="h6" color="primary" gutterBottom>
-                  R$ {car.price.toLocaleString('pt-BR')}
-                </Typography>
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                  <IconButton onClick={() => handleEdit(car)} size="small">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteCar(car.id)} size="small" color="error">
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Carros
+      </Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: 3,
+          mb: 4,
+        }}
+      >
+        {cars.map((car) => (
+          <Card key={String(car.id)} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardMedia
+              component="img"
+              height="200"
+              image={car.imageUrls[0] || 'https://via.placeholder.com/300x200?text=Sem+Imagem'}
+              alt={`${car.brand} ${car.model}`}
+            />
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Typography gutterBottom variant="h6" component="div">
+                {car.brand} {car.model}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Ano: {car.year}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Preço: R$ {car.price.toLocaleString('pt-BR')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Quilometragem: {car.mileage.toLocaleString('pt-BR')} km
+              </Typography>
+            </CardContent>
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+              <IconButton onClick={() => handleOpen(car)} color="primary">
+                <EditIcon />
+              </IconButton>
+              <IconButton onClick={() => handleDelete(String(car.id))} color="error">
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          </Card>
+        ))}
+      </Box>
+
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Contatos
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nome</TableCell>
+              <TableCell>Telefone</TableCell>
+              <TableCell>Mensagem</TableCell>
+              <TableCell>Data</TableCell>
+              <TableCell>Ações</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {contacts.map((contact) => (
+              <TableRow key={String(contact.id)}>
+                <TableCell>{contact.name}</TableCell>
+                <TableCell>{contact.phone}</TableCell>
+                <TableCell>{contact.message}</TableCell>
+                <TableCell>
+                  {contact.createdAt &&
+                    (typeof (contact.createdAt as any).toDate === 'function'
+                      ? (contact.createdAt as any).toDate().toLocaleDateString('pt-BR')
+                      : new Date(contact.createdAt).toLocaleDateString('pt-BR'))}
+                </TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleDeleteContact(String(contact.id))} color="error">
                     <DeleteIcon />
                   </IconButton>
-                </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-
-        <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-          Contatos
-        </Typography>
-
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell>Telefone</TableCell>
-                <TableCell>Mensagem</TableCell>
-                <TableCell>Data</TableCell>
-                <TableCell>Ações</TableCell>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {contacts.map((contact) => (
-                <TableRow key={contact.id}>
-                  <TableCell>{contact.name}</TableCell>
-                  <TableCell>{contact.phone}</TableCell>
-                  <TableCell>{contact.message}</TableCell>
-                  <TableCell>{new Date(contact.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <IconButton size="small" color="error" onClick={() => handleDeleteContact(contact.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-          <form onSubmit={handleSubmit}>
-            <DialogTitle>
-              {editingCar ? 'Editar Carro' : 'Adicionar Carro'}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
-                <TextField
-                  name="brand"
-                  label="Marca"
-                  defaultValue={editingCar?.brand}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="model"
-                  label="Modelo"
-                  defaultValue={editingCar?.model}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="year"
-                  label="Ano"
-                  type="number"
-                  defaultValue={editingCar?.year}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="price"
-                  label="Preço"
-                  type="number"
-                  defaultValue={editingCar?.price}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="mileage"
-                  label="Quilometragem"
-                  type="number"
-                  defaultValue={editingCar?.mileage}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="color"
-                  label="Cor"
-                  defaultValue={editingCar?.color}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="fuelType"
-                  label="Tipo de Combustível"
-                  defaultValue={editingCar?.fuelType}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="transmission"
-                  label="Transmissão"
-                  defaultValue={editingCar?.transmission}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="description"
-                  label="Descrição"
-                  multiline
-                  rows={4}
-                  defaultValue={editingCar?.description}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  name="images"
-                  type="file"
-                  inputProps={{ multiple: true, accept: 'image/*' }}
-                  fullWidth
-                />
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
-              <Button type="submit" variant="contained">
-                {editingCar ? 'Salvar' : 'Adicionar'}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
-      </Container>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {editingCar ? 'Editar Carro' : 'Adicionar Carro'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Marca"
+              value={formData.brand}
+              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+            />
+            <TextField
+              label="Modelo"
+              value={formData.model}
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+            />
+            <TextField
+              label="Ano"
+              type="number"
+              value={formData.year}
+              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+            />
+            <TextField
+              label="Preço"
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+            />
+            <TextField
+              label="Descrição"
+              multiline
+              rows={4}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+            <TextField
+              label="Quilometragem"
+              type="number"
+              value={formData.mileage}
+              onChange={(e) => setFormData({ ...formData, mileage: parseInt(e.target.value) })}
+            />
+            <TextField
+              label="Tipo de Combustível"
+              value={formData.fuelType}
+              onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })}
+            />
+            <TextField
+              label="Transmissão"
+              value={formData.transmission}
+              onChange={(e) => setFormData({ ...formData, transmission: e.target.value })}
+            />
+            <TextField
+              label="Cor"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleSubmit} variant="contained">
+            {editingCar ? 'Salvar' : 'Adicionar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
-} 
+};
+
+export default Dashboard; 

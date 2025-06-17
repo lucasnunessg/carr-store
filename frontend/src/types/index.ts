@@ -1,25 +1,42 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface Car {
-  id: number;
+  id: string;
   brand: string;
   model: string;
   year: number;
   price: number;
   description: string;
-  imageUrls: string[];
   mileage: number;
-  color: string;
   fuelType: string;
   transmission: string;
-  createdAt: string;
-  updatedAt: string;
+  color: string;
+  imageUrls: string[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface Contact {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   message: string;
-  createdAt: string;
+  createdAt: Timestamp;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+}
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 }
 
 export interface CarFilters {
@@ -27,4 +44,8 @@ export interface CarFilters {
   model?: string;
   minPrice?: number;
   maxPrice?: number;
+  minYear?: number;
+  maxYear?: number;
+  fuelType?: string;
+  transmission?: string;
 } 

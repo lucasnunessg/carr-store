@@ -14,17 +14,19 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
-import { getCars, createContact } from '../services/localStorage';
-import type { Car, CarFilters } from '../types';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import { useTheme } from '@mui/material/styles';
+import { getCars } from '../services/carService';
+import { createContact } from '../services/contactService';
+import type { Car, CarFilters, Contact } from '../types';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import { formatPrice } from '../utils/format';
 import { isAuthenticated } from '../services/auth';
 
 export default function Home() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [cars, setCars] = useState<Car[]>([]);
   const [filters, setFilters] = useState<CarFilters>({});
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
@@ -35,6 +37,7 @@ export default function Home() {
     phone: '',
     message: '',
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadCars();
@@ -42,20 +45,25 @@ export default function Home() {
 
   const loadCars = async () => {
     try {
-      const data = await getCars();
-      setCars(data);
+      setLoading(true);
+      const carsData = await getCars();
+      setCars(carsData);
     } catch (error) {
       console.error('Error loading cars:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleContactSubmit = async () => {
     try {
-      await createContact({
+      const contactData: Omit<Contact, 'id' | 'createdAt'> = {
         name: contactForm.name,
         phone: contactForm.phone,
         message: contactForm.message,
-      });
+      };
+
+      await createContact(contactData);
 
       setContactForm({
         name: '',
@@ -93,6 +101,14 @@ export default function Home() {
       );
     }
   };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ py: 4 }}>
@@ -189,71 +205,62 @@ export default function Home() {
               display: 'grid',
               gridTemplateColumns: {
                 xs: '1fr',
-                sm: '1fr 1fr',
-                md: '1fr 1fr 1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(3, 1fr)',
               },
               gap: 3,
-              mb: 6,
             }}
           >
             {cars.map((car) => (
-              <Card key={car.id}>
-                {car.imageUrls && car.imageUrls.length > 0 && (
-                  <Box 
-                    sx={{ 
-                      position: 'relative', 
-                      height: 200,
-                      cursor: car.imageUrls.length > 1 ? 'pointer' : 'default'
-                    }}
-                    onClick={() => handleImageClick(car)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={car.imageUrls[0]}
-                      alt={`${car.brand} ${car.model}`}
-                      sx={{ objectFit: 'cover' }}
-                    />
-                    {car.imageUrls.length > 1 && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: 8,
-                          right: 8,
-                          bgcolor: 'rgba(0, 0, 0, 0.7)',
-                          color: 'white',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: 1,
-                        }}
-                      >
-                        +{car.imageUrls.length - 1} imagens
-                      </Box>
-                    )}
-                  </Box>
-                )}
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
+              <Card key={car.id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={car.imageUrls[0] || 'https://via.placeholder.com/300x200?text=Sem+Imagem'}
+                  alt={`${car.brand} ${car.model}`}
+                />
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography gutterBottom variant="h6" component="div">
                     {car.brand} {car.model}
                   </Typography>
-                  <Typography color="text.secondary" gutterBottom>
-                    Ano: {car.year} • {car.mileage.toLocaleString()} km
+                  <Typography variant="body2" color="text.secondary">
+                    Ano: {car.year}
                   </Typography>
-                  <Typography variant="h6" color="primary" gutterBottom>
-                    {formatPrice(car.price)}
+                  <Typography variant="body2" color="text.secondary">
+                    Preço: R$ {car.price.toLocaleString('pt-BR')}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Quilometragem: {car.mileage.toLocaleString('pt-BR')} km
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Cor: {car.color}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Combustível: {car.fuelType}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Transmissão: {car.transmission}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {car.description}
+                  </Typography>
+                </CardContent>
+                <Box sx={{ p: 2 }}>
                   <Button
                     variant="contained"
                     color="primary"
-                    href={`https://wa.me/55999997647?text=Olá, tenho interesse no ${car.brand} ${car.model}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    startIcon={<WhatsAppIcon />}
                     fullWidth
+                    onClick={() => handleImageClick(car)}
+                    sx={{
+                      background: theme.palette.primary.main,
+                      '&:hover': {
+                        background: theme.palette.primary.dark,
+                      },
+                    }}
                   >
-                    Contato
+                    Entrar em Contato
                   </Button>
-                </CardContent>
+                </Box>
               </Card>
             ))}
           </Box>

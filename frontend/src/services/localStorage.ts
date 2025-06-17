@@ -1,111 +1,96 @@
-import type { Car, Contact as ContactBase } from '../types';
+import type { Car, Contact } from '../types';
+import { db } from './db';
 
-const CARS_KEY = 'cars';
-const CONTACTS_KEY = 'contacts';
-
-type Contact = ContactBase & {
-  updatedAt?: string;
-};
-
-const generateId = () => Date.now().toString();
-console.log(generateId());
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-};
-
-console.log(fileToBase64(new File([], 'test.jpg')));
-
+// Funções para gerenciar carros
 export const getCars = async (): Promise<Car[]> => {
-  const cars = JSON.parse(localStorage.getItem(CARS_KEY) || '[]');
-  return cars;
+  try {
+    return await db.getCars();
+  } catch (error) {
+    console.error('Erro ao buscar carros:', error);
+    return [];
+  }
 };
 
 export const getCarById = async (id: number): Promise<Car | null> => {
-  const cars = await getCars();
-  return cars.find(car => car.id === id) || null;
+  try {
+    const car = await db.getCarById(id);
+    return car || null;
+  } catch (error) {
+    console.error('Erro ao buscar carro:', error);
+    return null;
+  }
 };
 
 export const createCar = async (car: Omit<Car, 'id'>): Promise<Car> => {
-  const cars = await getCars();
-  const newCar: Car = {
-    ...car,
-    id: Date.now(),
-  };
-  cars.push(newCar);
-  localStorage.setItem(CARS_KEY, JSON.stringify(cars));
-  return newCar;
+  try {
+    return await db.createCar(car);
+  } catch (error) {
+    console.error('Erro ao criar carro:', error);
+    throw error;
+  }
 };
 
 export const updateCar = async (id: number, car: Partial<Car>): Promise<Car | null> => {
-  const cars = await getCars();
-  const index = cars.findIndex(c => c.id === id);
-  if (index === -1) return null;
-
-  const updatedCar: Car = {
-    ...cars[index],
-    ...car,
-  };
-  cars[index] = updatedCar;
-  localStorage.setItem(CARS_KEY, JSON.stringify(cars));
-  return updatedCar;
+  try {
+    return await db.updateCar(id, car);
+  } catch (error) {
+    console.error('Erro ao atualizar carro:', error);
+    throw error;
+  }
 };
 
 export const deleteCar = async (id: number): Promise<boolean> => {
-  const cars = await getCars();
-  const filteredCars = cars.filter(car => car.id !== id);
-  if (filteredCars.length === cars.length) return false;
-  
-  localStorage.setItem(CARS_KEY, JSON.stringify(filteredCars));
-  return true;
+  try {
+    return await db.deleteCar(id);
+  } catch (error) {
+    console.error('Erro ao deletar carro:', error);
+    throw error;
+  }
 };
 
-export const getContacts = (): Contact[] => {
-  return JSON.parse(localStorage.getItem(CONTACTS_KEY) || '[]');
+// Funções para gerenciar contatos
+export const getContacts = async (): Promise<Contact[]> => {
+  try {
+    return await db.getContacts();
+  } catch (error) {
+    console.error('Erro ao buscar contatos:', error);
+    return [];
+  }
 };
 
-export const createContact = async (contact: Omit<Contact, 'id' | 'createdAt'>): Promise<Contact> => {
-  const contacts = getContacts();
-  const newContact: Contact = {
-    ...contact,
-    id: Date.now(),
-    createdAt: new Date().toISOString(),
-  };
-  contacts.push(newContact);
-  localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
-  return newContact;
-};
-
-export const getContactById = async (id: number): Promise<Contact | null> => {
-  const contacts = getContacts();
-  return contacts.find(contact => contact.id === id) || null;
-};
-
-export const updateContact = async (id: number, contact: Partial<Contact>): Promise<Contact | null> => {
-  const contacts = getContacts();
-  const index = contacts.findIndex(c => c.id === id);
-  if (index === -1) return null;
-
-  const updatedContact: Contact = {
-    ...contacts[index],
-    ...contact,
-    updatedAt: new Date().toISOString(),
-  };
-  contacts[index] = updatedContact;
-  localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
-  return updatedContact;
+export const createContact = async (contact: Omit<Contact, 'id'>): Promise<Contact> => {
+  try {
+    return await db.createContact(contact);
+  } catch (error) {
+    console.error('Erro ao criar contato:', error);
+    throw error;
+  }
 };
 
 export const deleteContact = async (id: number): Promise<boolean> => {
-  const contacts = getContacts();
-  const filteredContacts = contacts.filter(contact => contact.id !== id);
-  if (filteredContacts.length === contacts.length) return false;
-  
-  localStorage.setItem(CONTACTS_KEY, JSON.stringify(filteredContacts));
-  return true;
+  try {
+    return await db.deleteContact(id);
+  } catch (error) {
+    console.error('Erro ao deletar contato:', error);
+    throw error;
+  }
+};
+
+// Funções para backup e restauração
+export const exportData = async () => {
+  try {
+    return await db.exportData();
+  } catch (error) {
+    console.error('Erro ao exportar dados:', error);
+    throw error;
+  }
+};
+
+export const importData = async (data: { cars: Car[]; contacts: Contact[] }) => {
+  try {
+    await db.importData(data);
+  } catch (error) {
+    console.error('Erro ao importar dados:', error);
+    throw error;
+  }
 };
