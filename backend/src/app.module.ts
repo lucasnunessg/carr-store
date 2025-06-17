@@ -15,7 +15,7 @@ import { ContactsModule } from './contacts/contacts.module';
         type: 'postgres',
         url: configService.get('DATABASE_URL'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Apenas em desenvolvimento
+        synchronize: process.env.NODE_ENV !== 'production',
         ssl: {
           rejectUnauthorized: false,
         },

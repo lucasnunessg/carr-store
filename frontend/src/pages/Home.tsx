@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -14,14 +15,16 @@ import {
   DialogContent,
   IconButton,
 } from '@mui/material';
-import { getCars, createContact } from '../services/api';
+import { getCars, createContact } from '../services/localStorage';
 import type { Car, CarFilters } from '../types';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { formatPrice } from '../utils/format';
+import { isAuthenticated } from '../services/auth';
 
 export default function Home() {
+  const navigate = useNavigate();
   const [cars, setCars] = useState<Car[]>([]);
   const [filters, setFilters] = useState<CarFilters>({});
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
@@ -101,6 +104,16 @@ export default function Home() {
           <Typography variant="subtitle1" color="text.secondary">
             Explore nossa seleção de veículos de alta qualidade
           </Typography>
+          {isAuthenticated() && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/dashboard')}
+              sx={{ mt: 2 }}
+            >
+              Ir para Dashboard
+            </Button>
+          )}
         </Box>
 
         <Box sx={{ mb: 6 }}>
@@ -197,7 +210,7 @@ export default function Home() {
                     <CardMedia
                       component="img"
                       height="200"
-                      image={`http://localhost:3000${car.imageUrls[0]}`}
+                      image={car.imageUrls[0]}
                       alt={`${car.brand} ${car.model}`}
                       sx={{ objectFit: 'cover' }}
                     />
@@ -316,7 +329,7 @@ export default function Home() {
               <>
                 <Box
                   component="img"
-                  src={`http://localhost:3000${selectedCar.imageUrls[currentImageIndex]}`}
+                  src={selectedCar.imageUrls[currentImageIndex]}
                   alt={`${selectedCar.brand} ${selectedCar.model}`}
                   sx={{
                     width: '100%',

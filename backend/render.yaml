@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: broker-store-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 3000
+      - key: HOST
+        value: 0.0.0.0
+      - key: FRONTEND_URL
+        value: https://broker-store.vercel.app 

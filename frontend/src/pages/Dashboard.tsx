@@ -26,8 +26,8 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/ico
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import type { Car, Contact } from '../types';
-import { createCar, updateCar, deleteCar, getCars } from '../services/cars';
-import { getContacts, deleteContact } from '../services/contacts';
+import { createCar, updateCar, deleteCar, getCars } from '../services/localStorage';
+import { getContacts, deleteContact } from '../services/localStorage';
 import { formatPrice } from '../utils/format';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -242,7 +242,7 @@ export default function Dashboard() {
                   <CardMedia
                     component="img"
                     height="200"
-                    image={`http://localhost:3000${car.imageUrls[0]}`}
+                    image={car.imageUrls[0]}
                     alt={`${car.brand} ${car.model}`}
                     sx={{ objectFit: 'cover' }}
                   />
