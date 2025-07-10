@@ -1,81 +1,39 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  addDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  Timestamp,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
+import api from './api';
 import type { Contact } from '../types';
 
-const CONTACTS_COLLECTION = 'contacts';
+const CONTACTS_STORAGE_KEY = 'contacts';
+
+// Função auxiliar para gerar IDs únicos
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Buscar todos os contatos
 export const getContacts = async (): Promise<Contact[]> => {
-  const contactsRef = collection(db, CONTACTS_COLLECTION);
-  const q = query(contactsRef, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    return ({
-      id: doc.id,
-      name: data.name,
-      phone: data.phone,
-      message: data.message,
-      createdAt: data.createdAt,
-    } as unknown) as Contact;
-  });
+  const response = await api.get<Contact[]>('/contacts');
+  return response.data;
 };
 
 // Buscar contato por ID
-export const getContactById = async (id: string): Promise<Contact | null> => {
-  const docRef = doc(db, CONTACTS_COLLECTION, id);
-  const docSnap = await getDoc(docRef);
-
-  if (!docSnap.exists()) {
-    return null;
-  }
-
-  const data = docSnap.data();
-  return ({
-    id: docSnap.id,
-    name: data.name,
-    phone: data.phone,
-    message: data.message,
-    createdAt: data.createdAt,
-  } as unknown) as Contact;
+export const getContactById = async (id: string): Promise<Contact> => {
+  const response = await api.get<Contact>(`/contacts/${id}`);
+  return response.data;
 };
 
 // Criar novo contato
-export const createContact = async (
-  contactData: Omit<Contact, 'id' | 'createdAt'>
+export const createContact = async (contactData: Omit<Contact, '_id' | 'createdAt' | 'updatedAt'>): Promise<Contact> => {
+  const response = await api.post<Contact>('/contacts', contactData);
+  return response.data;
+};
+
+// Atualizar contato
+export const updateContact = async (
+  id: string,
+  contactData: Partial<Omit<Contact, '_id' | 'createdAt' | 'updatedAt'>>
 ): Promise<Contact> => {
-  const contactsRef = collection(db, CONTACTS_COLLECTION);
-  const contactWithTimestamp = {
-    ...contactData,
-    createdAt: Timestamp.now(),
-  };
-
-  const docRef = await addDoc(contactsRef, contactWithTimestamp);
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.data();
-
-  return ({
-    id: docRef.id,
-    name: data!.name,
-    phone: data!.phone,
-    message: data!.message,
-    createdAt: data!.createdAt,
-  } as unknown) as Contact;
+  const response = await api.put<Contact>(`/contacts/${id}`, contactData);
+  return response.data;
 };
 
 // Deletar contato
 export const deleteContact = async (id: string): Promise<void> => {
-  const docRef = doc(db, CONTACTS_COLLECTION, id);
-  await deleteDoc(docRef);
+  await api.delete(`/contacts/${id}`);
 }; 

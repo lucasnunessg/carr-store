@@ -1,165 +1,88 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  Timestamp,
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import api from './api';
 import type { Car } from '../types';
 
-const CARS_COLLECTION = 'cars';
+const CARS_STORAGE_KEY = 'cars';
 
-// Função para converter File em URL
-const uploadImage = async (file: File): Promise<string> => {
-  const storageRef = ref(storage, `cars/${Date.now()}_${file.name}`);
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
-};
+// Função auxiliar para gerar IDs únicos
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Buscar todos os carros
 export const getCars = async (): Promise<Car[]> => {
-  const carsRef = collection(db, CARS_COLLECTION);
-  const q = query(carsRef, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    return ({
-      id: doc.id,
-      brand: data.brand,
-      model: data.model,
-      year: data.year,
-      price: data.price,
-      description: data.description,
-      mileage: data.mileage,
-      fuelType: data.fuelType,
-      transmission: data.transmission,
-      color: data.color,
-      imageUrls: data.imageUrls || [],
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-    } as unknown) as Car;
-  });
+  const response = await api.get<Car[]>('/cars');
+  return response.data;
 };
 
 // Buscar carro por ID
-export const getCarById = async (id: string): Promise<Car | null> => {
-  const docRef = doc(db, CARS_COLLECTION, id);
-  const docSnap = await getDoc(docRef);
-
-  if (!docSnap.exists()) {
-    return null;
-  }
-
-  const data = docSnap.data();
-  return ({
-    id: docSnap.id,
-    brand: data.brand,
-    model: data.model,
-    year: data.year,
-    price: data.price,
-    description: data.description,
-    mileage: data.mileage,
-    fuelType: data.fuelType,
-    transmission: data.transmission,
-    color: data.color,
-    imageUrls: data.imageUrls || [],
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  } as unknown) as Car;
+export const getCarById = async (id: string): Promise<Car> => {
+  const response = await api.get<Car>(`/cars/${id}`);
+  return response.data;
 };
 
 // Criar novo carro
 export const createCar = async (
-  carData: Omit<Car, 'id' | 'imageUrls' | 'createdAt' | 'updatedAt'>,
-  imageFile?: File
+  carData: Omit<Car, '_id' | 'imageUrls' | 'createdAt' | 'updatedAt'>,
+  imageFiles?: File[]
 ): Promise<Car> => {
-  const carsRef = collection(db, CARS_COLLECTION);
-  let imageUrls: string[] = [];
+  const formData = new FormData();
+  
+  // Adicionar dados do carro
+  Object.entries(carData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value.toString());
+    }
+  });
 
-  if (imageFile) {
-    const imageUrl = await uploadImage(imageFile);
-    imageUrls = [imageUrl];
+  // Adicionar imagens se existirem
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach((file) => {
+      formData.append('images', file);
+    });
   }
 
-  const carWithTimestamps = {
-    ...carData,
-    imageUrls,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  };
-
-  const docRef = await addDoc(carsRef, carWithTimestamps);
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.data();
-
-  return ({
-    id: docRef.id,
-    brand: data!.brand,
-    model: data!.model,
-    year: data!.year,
-    price: data!.price,
-    description: data!.description,
-    mileage: data!.mileage,
-    fuelType: data!.fuelType,
-    transmission: data!.transmission,
-    color: data!.color,
-    imageUrls: data!.imageUrls || [],
-    createdAt: data!.createdAt,
-    updatedAt: data!.updatedAt,
-  } as unknown) as Car;
+  const response = await api.post<Car>('/cars', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  
+  return response.data;
 };
 
 // Atualizar carro
 export const updateCar = async (
   id: string,
-  carData: Partial<Omit<Car, 'id' | 'imageUrls' | 'createdAt' | 'updatedAt'>>,
-  imageFile?: File
+  carData: Partial<Omit<Car, '_id' | 'imageUrls' | 'createdAt' | 'updatedAt'>>,
+  imageFiles?: File[]
 ): Promise<Car> => {
-  const docRef = doc(db, CARS_COLLECTION, id);
-  const updateData: any = {
-    ...carData,
-    updatedAt: Timestamp.now(),
-  };
+  const formData = new FormData();
+  
+  // Adicionar dados do carro
+  Object.entries(carData).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value.toString());
+    }
+  });
 
-  if (imageFile) {
-    const imageUrl = await uploadImage(imageFile);
-    const docSnap = await getDoc(docRef);
-    const currentData = docSnap.data();
-    const currentImageUrls = currentData?.imageUrls || [];
-    updateData.imageUrls = [...currentImageUrls, imageUrl];
+  // Adicionar imagens se existirem
+  if (imageFiles && imageFiles.length > 0) {
+    imageFiles.forEach((file) => {
+      formData.append('images', file);
+    });
   }
 
-  await updateDoc(docRef, updateData);
-  const updatedDoc = await getDoc(docRef);
-  const data = updatedDoc.data();
-
-  return ({
-    id: updatedDoc.id,
-    brand: data!.brand,
-    model: data!.model,
-    year: data!.year,
-    price: data!.price,
-    description: data!.description,
-    mileage: data!.mileage,
-    fuelType: data!.fuelType,
-    transmission: data!.transmission,
-    color: data!.color,
-    imageUrls: data!.imageUrls || [],
-    createdAt: data!.createdAt,
-    updatedAt: data!.updatedAt,
-  } as unknown) as Car;
+  const response = await api.put<Car>(`/cars/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  
+  return response.data;
 };
 
 // Deletar carro
 export const deleteCar = async (id: string): Promise<void> => {
-  const docRef = doc(db, CARS_COLLECTION, id);
-  await deleteDoc(docRef);
+  console.log('deleteCar chamado com ID:', id);
+  console.log('URL da requisição:', `/cars/${id}`);
+  const response = await api.delete(`/cars/${id}`);
+  console.log('Resposta da deleção:', response);
 }; 

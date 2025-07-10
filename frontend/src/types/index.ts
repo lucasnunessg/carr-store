@@ -1,7 +1,5 @@
-import { Timestamp } from 'firebase/firestore';
-
 export interface Car {
-  id: string;
+  _id: string;
   brand: string;
   model: string;
   year: number;
@@ -12,23 +10,29 @@ export interface Car {
   transmission: string;
   color: string;
   imageUrls: string[];
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Contact {
-  id: string;
+  _id: string;
   name: string;
+  email: string;
   phone: string;
   message: string;
-  createdAt: Timestamp;
+  carId?: string;
+  createdAt: string;
+  updatedAt: string;
+  car?: Car;
 }
 
 export interface User {
-  id: string;
-  email: string;
+  id: number;
   name: string;
+  email: string;
   role: 'admin' | 'user';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthState {

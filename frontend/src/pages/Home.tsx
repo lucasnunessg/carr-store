@@ -15,6 +15,7 @@ import {
   DialogContent,
   IconButton,
   CircularProgress,
+  Fab,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { getCars } from '../services/carService';
@@ -22,6 +23,7 @@ import { createContact } from '../services/contactService';
 import type { Car, CarFilters, Contact } from '../types';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { isAuthenticated } from '../services/auth';
 
 export default function Home() {
@@ -29,6 +31,7 @@ export default function Home() {
   const theme = useTheme();
   const [cars, setCars] = useState<Car[]>([]);
   const [filters, setFilters] = useState<CarFilters>({});
+  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -42,6 +45,20 @@ export default function Home() {
   useEffect(() => {
     loadCars();
   }, []);
+
+  // Filtro em tempo real
+  useEffect(() => {
+    const lower = (v: string | undefined) => (v || '').toLowerCase();
+    setFilteredCars(
+      cars.filter(car => {
+        if (filters.brand && !car.brand.toLowerCase().includes(lower(filters.brand))) return false;
+        if (filters.model && !car.model.toLowerCase().includes(lower(filters.model))) return false;
+        if (filters.minPrice && car.price < filters.minPrice) return false;
+        if (filters.maxPrice && car.price > filters.maxPrice) return false;
+        return true;
+      })
+    );
+  }, [cars, filters]);
 
   const loadCars = async () => {
     try {
@@ -57,8 +74,9 @@ export default function Home() {
 
   const handleContactSubmit = async () => {
     try {
-      const contactData: Omit<Contact, 'id' | 'createdAt'> = {
+      const contactData: Omit<Contact, '_id' | 'createdAt' | 'updatedAt'> = {
         name: contactForm.name,
+        email: 'contato@carsstore.com', // Email padrão para contatos gerais
         phone: contactForm.phone,
         message: contactForm.message,
       };
@@ -100,6 +118,18 @@ export default function Home() {
         prev === 0 ? selectedCar.imageUrls.length - 1 : prev - 1
       );
     }
+  };
+
+  const handleWhatsAppClick = () => {
+    window.open('https://api.whatsapp.com/send?phone=5555999997947', '_blank');
+  };
+
+  // Adicionar uma função para abrir WhatsApp com informações do carro
+  const handleWhatsAppContact = (car: Car) => {
+    const message = `Olá! Tenho interesse no ${car.brand} ${car.model} ${car.year}. Poderia me passar mais informações?`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=5555999997947&text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (loading) {
@@ -199,7 +229,7 @@ export default function Home() {
           </Paper>
         </Box>
 
-        {cars.length > 0 ? (
+        {filteredCars.length > 0 ? (
           <Box
             sx={{
               display: 'grid',
@@ -211,14 +241,24 @@ export default function Home() {
               gap: 3,
             }}
           >
-            {cars.map((car) => (
-              <Card key={car.id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={car.imageUrls[0] || 'https://via.placeholder.com/300x200?text=Sem+Imagem'}
-                  alt={`${car.brand} ${car.model}`}
-                />
+            {filteredCars.map((car) => (
+              <Card key={car._id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200, bgcolor: '#f5f5f5', cursor: 'pointer' }} onClick={() => handleImageClick(car)}>
+                  {car.imageUrls && car.imageUrls.length > 0 ? (
+                    <img
+                      src={car.imageUrls[0]}
+                      alt={`${car.brand} ${car.model}`}
+                      style={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain', borderRadius: 8 }}
+                    />
+                  ) : (
+                    <span>Sem Imagem</span>
+                  )}
+                  {car.imageUrls.length > 1 && (
+                    <Box sx={{ position: 'absolute', right: 8, top: 8, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', px: 1, borderRadius: 1, fontSize: 12 }}>
+                      +{car.imageUrls.length - 1}
+                    </Box>
+                  )}
+                </Box>
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography gutterBottom variant="h6" component="div">
                     {car.brand} {car.model}
@@ -250,7 +290,7 @@ export default function Home() {
                     variant="contained"
                     color="primary"
                     fullWidth
-                    onClick={() => handleImageClick(car)}
+                    onClick={() => handleWhatsAppContact(car)}
                     sx={{
                       background: theme.palette.primary.main,
                       '&:hover': {
@@ -410,6 +450,25 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       </Container>
+      
+      {/* Botão flutuante do WhatsApp */}
+      <Fab
+        color="primary"
+        aria-label="WhatsApp"
+        onClick={handleWhatsAppClick}
+        sx={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          bgcolor: '#25D366', // Cor verde do WhatsApp
+          '&:hover': {
+            bgcolor: '#128C7E', // Verde mais escuro no hover
+          },
+          zIndex: 1000,
+        }}
+      >
+        <WhatsAppIcon />
+      </Fab>
     </Box>
   );
 } 

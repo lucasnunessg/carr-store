@@ -45,7 +45,7 @@ const Dashboard: React.FC = () => {
     transmission: '',
     color: '',
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   useEffect(() => {
     loadData();
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
       transmission: '',
       color: '',
     });
-    setImageFile(null);
+    setImageFiles([]);
   };
 
   const handleSubmit = async () => {
@@ -110,42 +110,53 @@ const Dashboard: React.FC = () => {
       const requiredFields = [
         'brand', 'model', 'year', 'price', 'description', 'mileage', 'fuelType', 'transmission', 'color'
       ];
-      for (const field of requiredFields) {
-        if (!formData[field as keyof Car]) {
-          alert(`Campo obrigatório: ${field}`);
-          return;
-        }
+      
+      const missingFields = requiredFields.filter(field => {
+        const value = formData[field as keyof Car];
+        return value === undefined || value === null || value === '';
+      });
+
+      if (missingFields.length > 0) {
+        alert(`Por favor, preencha todos os campos obrigatórios: ${missingFields.join(', ')}`);
+        return;
       }
+
       const carData = {
         brand: formData.brand as string,
         model: formData.model as string,
-        year: formData.year as number,
-        price: formData.price as number,
+        year: Number(formData.year) || 0,
+        price: Number(formData.price) || 0,
         description: formData.description as string,
-        mileage: formData.mileage as number,
+        mileage: Number(formData.mileage) || 0,
         fuelType: formData.fuelType as string,
         transmission: formData.transmission as string,
         color: formData.color as string,
       };
+
       if (editingCar) {
-        await updateCar(editingCar.id.toString(), carData, imageFile ?? undefined);
+        await updateCar(editingCar._id, carData, imageFiles);
       } else {
-        await createCar(carData, imageFile ?? undefined);
+        await createCar(carData, imageFiles);
       }
       handleClose();
       loadData();
     } catch (error) {
       console.error('Error saving car:', error);
+      alert('Erro ao salvar o carro. Por favor, tente novamente.');
     }
   };
 
   const handleDelete = async (id: string) => {
+    console.log('Tentando deletar carro com ID:', id);
     if (window.confirm('Tem certeza que deseja excluir este carro?')) {
       try {
+        console.log('Chamando deleteCar com ID:', id);
         await deleteCar(id);
+        console.log('Carro deletado com sucesso');
         loadData();
       } catch (error) {
         console.error('Error deleting car:', error);
+        alert('Erro ao deletar o carro. Por favor, tente novamente.');
       }
     }
   };
@@ -202,11 +213,11 @@ const Dashboard: React.FC = () => {
         }}
       >
         {cars.map((car) => (
-          <Card key={String(car.id)} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card key={String(car._id)} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardMedia
               component="img"
               height="200"
-              image={car.imageUrls[0] || 'https://via.placeholder.com/300x200?text=Sem+Imagem'}
+              image={car.imageUrls[0] || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2Y1ZjVmNSIvPgogIDx0ZXh0IHg9IjE1MCIgeT0iMTAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5TZW0gSW1hZ2VtPC90ZXh0Pgo8L3N2Zz4K'}
               alt={`${car.brand} ${car.model}`}
             />
             <CardContent sx={{ flexGrow: 1 }}>
@@ -227,7 +238,7 @@ const Dashboard: React.FC = () => {
               <IconButton onClick={() => handleOpen(car)} color="primary">
                 <EditIcon />
               </IconButton>
-              <IconButton onClick={() => handleDelete(String(car.id))} color="error">
+              <IconButton onClick={() => handleDelete(String(car._id))} color="error">
                 <DeleteIcon />
               </IconButton>
             </Box>
@@ -251,7 +262,7 @@ const Dashboard: React.FC = () => {
           </TableHead>
           <TableBody>
             {contacts.map((contact) => (
-              <TableRow key={String(contact.id)}>
+              <TableRow key={String(contact._id)}>
                 <TableCell>{contact.name}</TableCell>
                 <TableCell>{contact.phone}</TableCell>
                 <TableCell>{contact.message}</TableCell>
@@ -262,7 +273,7 @@ const Dashboard: React.FC = () => {
                       : new Date(contact.createdAt).toLocaleDateString('pt-BR'))}
                 </TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleDeleteContact(String(contact.id))} color="error">
+                  <IconButton onClick={() => handleDeleteContact(String(contact._id))} color="error">
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
@@ -292,13 +303,13 @@ const Dashboard: React.FC = () => {
               label="Ano"
               type="number"
               value={formData.year}
-              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) || 0 })}
             />
             <TextField
               label="Preço"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
             />
             <TextField
               label="Descrição"
@@ -311,7 +322,7 @@ const Dashboard: React.FC = () => {
               label="Quilometragem"
               type="number"
               value={formData.mileage}
-              onChange={(e) => setFormData({ ...formData, mileage: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, mileage: parseInt(e.target.value) || 0 })}
             />
             <TextField
               label="Tipo de Combustível"
@@ -328,10 +339,17 @@ const Dashboard: React.FC = () => {
               value={formData.color}
               onChange={(e) => setFormData({ ...formData, color: e.target.value })}
             />
-            <input
+            <TextField
+              label="Imagens"
               type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              inputProps={{ multiple: true, accept: 'image/*' }}
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files) {
+                  setImageFiles(Array.from(files));
+                }
+              }}
+              fullWidth
             />
           </Box>
         </DialogContent>

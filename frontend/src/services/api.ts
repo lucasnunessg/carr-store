@@ -2,15 +2,17 @@ import axios from 'axios';
 import type { Car, Contact, CarFilters } from '../types';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api',
 });
+
+export default api;
 
 export const getCars = async (filters?: CarFilters) => {
   const response = await api.get<Car[]>('/cars', { params: filters });
   return response.data;
 };
 
-export const getCar = async (id: number) => {
+export const getCar = async (id: string) => {
   const response = await api.get<Car>(`/cars/${id}`);
   return response.data;
 };
@@ -24,8 +26,8 @@ export const createCar = async (carData: FormData) => {
   return response.data;
 };
 
-export const updateCar = async (id: number, carData: FormData) => {
-  const response = await api.patch<Car>(`/cars/${id}`, carData, {
+export const updateCar = async (id: string, carData: FormData) => {
+  const response = await api.put<Car>(`/cars/${id}`, carData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -33,7 +35,7 @@ export const updateCar = async (id: number, carData: FormData) => {
   return response.data;
 };
 
-export const deleteCar = async (id: number) => {
+export const deleteCar = async (id: string) => {
   await api.delete(`/cars/${id}`);
 };
 
@@ -47,6 +49,6 @@ export const createContact = async (contact: Partial<Contact>) => {
   return response.data;
 };
 
-export const deleteContact = async (id: number) => {
+export const deleteContact = async (id: string) => {
   await api.delete(`/contacts/${id}`);
 }; 

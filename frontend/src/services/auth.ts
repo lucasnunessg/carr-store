@@ -1,7 +1,7 @@
 import type { User } from '../types';
 
-const ADMIN_EMAIL = 'umdouglassimoes@gmail.com';
-const ADMIN_PASSWORD = 'dodo1252501';
+const ADMIN_EMAIL = 'admin@carsstore.com';
+const ADMIN_PASSWORD = 'admin123';
 
 export const login = async (email: string, password: string): Promise<User> => {
   // Simulate API call delay
@@ -17,7 +17,7 @@ export const login = async (email: string, password: string): Promise<User> => {
     localStorage.setItem('user', JSON.stringify(user));
     return user;
   }
-  throw new Error('Invalid credentials');
+  throw new Error('Email ou senha inválidos');
 };
 
 export const logout = (): void => {
