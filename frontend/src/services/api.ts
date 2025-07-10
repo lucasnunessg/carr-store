@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { Car, Contact, CarFilters } from '../types';
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api',
+  baseURL: 'https://broker-store-production.up.railway.app/api',
 });
 
 export default api;

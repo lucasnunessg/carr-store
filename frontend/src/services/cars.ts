@@ -1,6 +1,6 @@
 import type { Car } from '../types';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://broker-store-production.up.railway.app';
 
 export const getCars = async (filters?: any): Promise<Car[]> => {
   const queryParams = new URLSearchParams();

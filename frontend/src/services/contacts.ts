@@ -1,6 +1,6 @@
 import type { Contact } from '../types';
 
-const API_URL = 'https://SEU_BACKEND_PUBLICO'; // Troque para a URL pública do seu backend
+const API_URL = 'https://broker-store-production.up.railway.app';
 
 export const getContacts = async (): Promise<Contact[]> => {
   const response = await fetch(`${API_URL}/contacts`);
