@@ -12,7 +12,7 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       serverSelectionTimeoutMS: 10000, // 10 segundos para Railway
       socketTimeoutMS: 30000, // 30 segundos
-      bufferCommands: true // Permitir buffer para Railway
+      bufferCommands: false // Permitir buffer para Railway
     });
     
     console.log(`MongoDB Connected: ${conn.connection.host}`);
