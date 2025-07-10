@@ -1,11 +1,6 @@
 import api from './api';
 import type { Car } from '../types';
 
-const CARS_STORAGE_KEY = 'cars';
-
-// Função auxiliar para gerar IDs únicos
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
 // Buscar todos os carros
 export const getCars = async (): Promise<Car[]> => {
   const response = await api.get<Car[]>('/cars');

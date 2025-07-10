@@ -344,7 +344,8 @@ const Dashboard: React.FC = () => {
               type="file"
               inputProps={{ multiple: true, accept: 'image/*' }}
               onChange={(e) => {
-                const files = e.target.files;
+                const target = e.target as HTMLInputElement;
+                const files = target.files;
                 if (files) {
                   setImageFiles(Array.from(files));
                 }

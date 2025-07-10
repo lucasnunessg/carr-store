@@ -1,11 +1,6 @@
 import api from './api';
 import type { Contact } from '../types';
 
-const CONTACTS_STORAGE_KEY = 'contacts';
-
-// Função auxiliar para gerar IDs únicos
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
 // Buscar todos os contatos
 export const getContacts = async (): Promise<Contact[]> => {
   const response = await api.get<Contact[]>('/contacts');

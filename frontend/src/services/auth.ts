@@ -12,7 +12,9 @@ export const login = async (email: string, password: string): Promise<User> => {
       id: 1,
       email: ADMIN_EMAIL,
       name: 'Admin',
-      role: 'admin'
+      role: 'admin',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     localStorage.setItem('user', JSON.stringify(user));
     return user;
