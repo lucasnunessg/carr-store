@@ -46,6 +46,15 @@ router.post('/', upload.array('images', 10), async (req, res) => {
     console.log('Dados recebidos:', req.body);
     console.log('Arquivos recebidos:', req.files);
     
+    // Verificar se o MongoDB está conectado
+    if (mongoose.connection.readyState !== 1) {
+      console.error('MongoDB não está conectado. Estado:', mongoose.connection.readyState);
+      return res.status(503).json({ 
+        message: 'Serviço temporariamente indisponível. Tente novamente em alguns segundos.',
+        error: 'Database connection not ready'
+      });
+    }
+    
     const carData = req.body;
     let imageUrls = [];
 
@@ -64,11 +73,21 @@ router.post('/', upload.array('images', 10), async (req, res) => {
       imageUrls: imageUrls
     });
 
-    await car.save();
-    res.status(201).json(car);
+    console.log('Salvando carro no banco...');
+    const savedCar = await car.save();
+    console.log('Carro salvo com sucesso:', savedCar._id);
+    
+    res.status(201).json(savedCar);
   } catch (error) {
     console.error('Erro ao criar carro:', error);
-    res.status(400).json({ message: error.message });
+    console.error('Stack trace:', error.stack);
+    
+    // Resposta mais detalhada para debug
+    res.status(400).json({ 
+      message: 'Erro ao criar carro',
+      error: error.message,
+      details: error.stack
+    });
   }
 });
 

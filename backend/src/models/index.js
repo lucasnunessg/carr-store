@@ -10,9 +10,9 @@ const connectDB = async () => {
     console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Definida' : 'Não definida');
     
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 30000, // 30 segundos
-      socketTimeoutMS: 45000, // 45 segundos
-      bufferCommands: false
+      serverSelectionTimeoutMS: 10000, // 10 segundos para Railway
+      socketTimeoutMS: 30000, // 30 segundos
+      bufferCommands: true // Permitir buffer para Railway
     });
     
     console.log(`MongoDB Connected: ${conn.connection.host}`);
@@ -26,12 +26,7 @@ const connectDB = async () => {
     console.error('Error connecting to MongoDB:', error);
     console.error('Detalhes do erro:', error.message);
     console.error('Stack trace:', error.stack);
-    
-    // Tentar novamente após 5 segundos
-    console.log('Tentando reconectar em 5 segundos...');
-    setTimeout(() => {
-      connectDB();
-    }, 5000);
+    process.exit(1); // Parar o servidor se não conseguir conectar
   }
 };
 
