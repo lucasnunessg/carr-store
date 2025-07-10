@@ -10,6 +10,7 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: [
+    'https://broker-car-store.vercel.app', // ✅ frontend na Vercel
     'https://broker-store-production.up.railway.app/',
     'http://localhost:5173',
     'http://localhost:3000'
