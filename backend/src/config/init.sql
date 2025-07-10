@@ -1,0 +1,49 @@
+-- Criar banco de dados
+CREATE DATABASE IF NOT EXISTS cars_store;
+USE cars_store;
+
+-- Criar tabela de usuários
+CREATE TABLE IF NOT EXISTS Users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('admin', 'user') DEFAULT 'user',
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Criar tabela de carros
+CREATE TABLE IF NOT EXISTS Cars (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  brand VARCHAR(255) NOT NULL,
+  model VARCHAR(255) NOT NULL,
+  year INT NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  description TEXT NOT NULL,
+  mileage INT NOT NULL,
+  fuelType VARCHAR(50) NOT NULL,
+  transmission VARCHAR(50) NOT NULL,
+  color VARCHAR(50) NOT NULL,
+  imageUrls JSON DEFAULT '[]',
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Criar tabela de contatos
+CREATE TABLE IF NOT EXISTS Contacts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(50) NOT NULL,
+  message TEXT NOT NULL,
+  carId INT NOT NULL,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (carId) REFERENCES Cars(id) ON DELETE CASCADE
+);
+
+-- Inserir usuário admin padrão (senha: admin123)
+INSERT INTO Users (name, email, password, role)
+VALUES ('Admin', 'admin@example.com', '$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5Yx', 'admin')
+ON DUPLICATE KEY UPDATE id=id; 
